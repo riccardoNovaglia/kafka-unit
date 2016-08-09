@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 
 import static org.apache.kafka.common.config.SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG;
 import static org.apache.kafka.common.config.SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG;
@@ -35,11 +34,6 @@ public class KafkaSSLIntegrationTest  {
     private static final int ZOOKEEPER_PORT = 6000;
     private static final int BROKER_PORT = 6001;
 
-    Function<ConsumerRecords<String, String>, List<String>> consumerRecordsToList = (cr) -> {
-        List<String> expectedMessages = new ArrayList<>();
-        cr.forEach(r -> expectedMessages.add(r.value()));
-        return expectedMessages;
-    };
 
     @Before
     public void setUp() throws Exception {
@@ -70,7 +64,7 @@ public class KafkaSSLIntegrationTest  {
         ProducerRecord<Long, String> record = new ProducerRecord<>(topic, 1L, "test");
         producer.send(record);
         final ConsumerRecords<String, String> expectedRecords = kafkaUnitServer.readMessages(topic, 1);
-        assertEquals("test", consumerRecordsToList.apply(expectedRecords).get(0));
+        assertEquals("test", getConsumerRecordsToList(expectedRecords).get(0));
     }
 
     @Test
@@ -111,14 +105,13 @@ public class KafkaSSLIntegrationTest  {
     private void assertKafkaServerIsAvailableWithSSL(KafkaUnitWithSSL server) throws TimeoutException {
         //given
         String testTopic = "TestTopic";
-        List<String> expectedMessages = new ArrayList<>();
         server.createTopic(testTopic);
         ProducerRecord<String, String> producerRecord = new ProducerRecord<>(testTopic, "key", "value");
 
         //when
         server.sendMessages(producerRecord);
         ConsumerRecords<String, String> messages = server.readMessages(testTopic, 1);
-        messages.forEach(r -> expectedMessages.add(r.value()));
+        List<String> expectedMessages = getConsumerRecordsToList(messages);
         //then
         assertEquals(Arrays.asList("value"),expectedMessages);
     }
@@ -127,4 +120,13 @@ public class KafkaSSLIntegrationTest  {
         final URL resource = this.getClass().getResource("/certStore");
         return resource.getPath();
     }
+
+    private  List<String> getConsumerRecordsToList(ConsumerRecords<String, String> records)  {
+        List<String> messages = new ArrayList<>();
+        for(ConsumerRecord<String, String> record : records){
+            messages.add(record.value());
+        }
+        return messages;
+    };
+
 }

@@ -8,7 +8,11 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.ComparisonFailure;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -121,6 +125,21 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
 
     private String getLocalCertStorePath() {
         final URL resource = this.getClass().getResource("/certStore");
-        return resource.getPath();
+        File certDir;
+        try {
+            certDir = java.nio.file.Files.createTempDirectory("certDir").toFile();
+            Files.copy(getCertFiles("client.keystore.jks"), Paths.get(certDir+"/client.keystore.jks"));
+            Files.copy(getCertFiles("client.truststore.jks"), Paths.get(certDir+"/client.truststore.jks"));
+            Files.copy(getCertFiles("server.keystore.jks"), Paths.get(certDir+"/server.keystore.jks"));
+            Files.copy(getCertFiles("server.truststore.jks"), Paths.get(certDir+"/server.truststore.jks"));
+            certDir.deleteOnExit();
+        } catch (IOException e) {
+            throw new RuntimeException("unable to create certificates directory", e);
+        }
+        return certDir.getPath();
+    }
+
+    private InputStream getCertFiles(String fileName){
+        return this.getClass().getResourceAsStream(format("/certStore/%s", fileName));
     }
 }
