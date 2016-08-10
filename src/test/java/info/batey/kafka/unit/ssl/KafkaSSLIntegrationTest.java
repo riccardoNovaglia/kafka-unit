@@ -1,5 +1,6 @@
 package info.batey.kafka.unit.ssl;
 
+import info.batey.kafka.unit.CertStoreConfig;
 import info.batey.kafka.unit.KafkaUnitWithSSL;
 import kafka.server.KafkaServerStartable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -11,7 +12,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -35,9 +35,17 @@ public class KafkaSSLIntegrationTest  {
     private static final int BROKER_PORT = 6001;
 
 
-    @Before
-    public void setUp() throws Exception {
+    private void setUpDefaultKafkaServer() throws Exception {
         kafkaUnitServer = new KafkaUnitWithSSL(ZOOKEEPER_PORT, BROKER_PORT);
+        startUpKafkaServer();
+    }
+
+    private void setUpKafkaServerWithCustomCertificates(CertStoreConfig certStoreConfig) {
+        kafkaUnitServer = new KafkaUnitWithSSL(ZOOKEEPER_PORT, BROKER_PORT, certStoreConfig);
+        startUpKafkaServer();
+    }
+
+    private void startUpKafkaServer() {
         kafkaUnitServer.setKafkaBrokerConfig("log.segment.bytes", "1024");
         kafkaUnitServer.startup();
     }
@@ -53,11 +61,15 @@ public class KafkaSSLIntegrationTest  {
 
     @Test
     public void kafkaServerIsAvailable() throws Exception {
+        setUpDefaultKafkaServer();
+
         assertKafkaServerIsAvailableWithSSL(kafkaUnitServer);
     }
 
     @Test
     public void canUseKafkaConnectToProduceWithSSL() throws Exception {
+        setUpDefaultKafkaServer();
+
         final String topic = "KafkakConnectTestTopic";
         Properties props = getKafkaSSLConfigProperties();
         Producer<Long, String> producer = new KafkaProducer<>(props);
@@ -69,6 +81,8 @@ public class KafkaSSLIntegrationTest  {
 
     @Test
     public void canReadProducerRecords() throws Exception {
+        setUpDefaultKafkaServer();
+
         //given
         String testTopic = "TestTopic";
         kafkaUnitServer.createTopic(testTopic);
@@ -86,6 +100,15 @@ public class KafkaSSLIntegrationTest  {
         assertEquals("Received message value is incorrect", "value", recievedMessage.value());
         assertEquals("Received message key is incorrect", "key", recievedMessage.key());
         assertEquals("Received message topic is incorrect", testTopic, recievedMessage.topic());
+    }
+
+    @Test
+    public void kafkaShouldRunWithCustomCertificateConfig() throws Exception {
+        setUpKafkaServerWithCustomCertificates(
+            new CertStoreConfig(getCertStorePath(), "test1234", "test1234", "test1234", "test1234")
+        );
+
+        assertKafkaServerIsAvailableWithSSL(kafkaUnitServer);
     }
 
     private Properties getKafkaSSLConfigProperties() {

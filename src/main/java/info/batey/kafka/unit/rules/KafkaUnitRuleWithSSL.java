@@ -1,5 +1,6 @@
 package info.batey.kafka.unit.rules;
 
+import info.batey.kafka.unit.CertStoreConfig;
 import info.batey.kafka.unit.KafkaUnitWithSSL;
 import org.junit.rules.ExternalResource;
 
@@ -9,6 +10,10 @@ public class KafkaUnitRuleWithSSL extends ExternalResource {
 
     public KafkaUnitRuleWithSSL(int zkPort, int kafkaPort) {
         this.kafkaUnit = new KafkaUnitWithSSL(zkPort, kafkaPort);
+    }
+
+    public KafkaUnitRuleWithSSL(int zkPort, int kafkaPort, CertStoreConfig certStoreConfig) {
+        this.kafkaUnit = new KafkaUnitWithSSL(zkPort, kafkaPort, certStoreConfig);
     }
 
     @Override

@@ -29,7 +29,6 @@ public abstract class AbstractKafkaUnit {
     protected String brokerString;
     protected int zkPort;
     protected int brokerPort;
-    protected String certStorePath = "";
     protected int timeout_3_Seconds = 3000;
     protected Properties kafkaBrokerConfig = new Properties();
 

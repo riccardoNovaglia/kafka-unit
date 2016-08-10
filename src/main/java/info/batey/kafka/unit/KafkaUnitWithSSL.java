@@ -10,7 +10,6 @@ import org.junit.ComparisonFailure;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -43,21 +42,36 @@ import static org.apache.kafka.common.config.SslConfigs.SSL_TRUSTSTORE_PASSWORD_
 
 public class KafkaUnitWithSSL extends AbstractKafkaUnit {
 
+    private final CertStoreConfig certStoreConfig;
+    private final String DEFAULT_HOST = "localhost";
+    private final String DEFAULT_SERVER_KEYSTORE = "server.keystore.jks";
+    private final String DEFAULT_SERVER_TRUSTSTORE = "server.truststore.jks";
+    private final String DEFAULT_CLIENT_TRUSTSTORE = "client.truststore.jks";
+    private final String DEFAULT_CLIENT_KEYSTORE = "client.keystore.jks";
+
     public KafkaUnitWithSSL(int zkPort, int brokerPort) {
         super();
         this.zkPort = zkPort;
         this.brokerPort = brokerPort;
-        this.certStorePath = getLocalCertStorePath();
-        this.zookeeperUri = "localhost:" + zkPort;
-        this.brokerString = "localhost:" + brokerPort;
+        this.zookeeperUri = DEFAULT_HOST + ":" + zkPort;
+        this.brokerString = DEFAULT_HOST + ":" + brokerPort;
+
+        String defaultPassword = "test1234";
+        this.certStoreConfig = new CertStoreConfig(
+            getLocalCertStorePath(),
+            defaultPassword,
+            defaultPassword,
+            defaultPassword,
+            defaultPassword
+        );
     }
 
-    public KafkaUnitWithSSL(int zkPort, int brokerPort, String certStorePath) {
+    public KafkaUnitWithSSL(int zkPort, int brokerPort, CertStoreConfig certStoreConfig) {
         this.zkPort = zkPort;
         this.brokerPort = brokerPort;
-        this.certStorePath = certStorePath;
-        this.zookeeperUri = "localhost:" + zkPort;
-        this.brokerString = "localhost:" + brokerPort;
+        this.zookeeperUri = DEFAULT_HOST + ":" + zkPort;
+        this.brokerString = DEFAULT_HOST + ":" + brokerPort;
+        this.certStoreConfig = certStoreConfig;
     }
 
     @Override Properties getProducerConfig() {
@@ -73,17 +87,17 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
         final File logDir = getLogDirectory();
         kafkaBrokerConfig.setProperty(ZOOKEEPER_CONNECT, zookeeperUri);
         kafkaBrokerConfig.setProperty(BROKER_ID, "1");
-        kafkaBrokerConfig.setProperty(BROKER_HOST_NAME, "localhost");
+        kafkaBrokerConfig.setProperty(BROKER_HOST_NAME, DEFAULT_HOST);
         kafkaBrokerConfig.setProperty(BROKER_PORT, Integer.toString(brokerPort));
         kafkaBrokerConfig.setProperty(ZOOKEEPER_LOG_DIRECTORY, logDir.getAbsolutePath());
         kafkaBrokerConfig.setProperty(ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES, valueOf(1));
-        kafkaBrokerConfig.setProperty(SSL_KEYSTORE_LOCATION_CONFIG, certStorePath + "/server.keystore.jks");
-        kafkaBrokerConfig.setProperty(SSL_TRUSTSTORE_LOCATION_CONFIG, certStorePath + "/server.truststore.jks");
-        kafkaBrokerConfig.setProperty(SSL_KEYSTORE_PASSWORD_CONFIG, "test1234");
-        kafkaBrokerConfig.setProperty(SSL_TRUSTSTORE_PASSWORD_CONFIG, "test1234");
-        kafkaBrokerConfig.setProperty(SSL_KEY_PASSWORD_CONFIG, "test1234");
+        kafkaBrokerConfig.setProperty(SSL_KEYSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + "/" + DEFAULT_SERVER_KEYSTORE);
+        kafkaBrokerConfig.setProperty(SSL_TRUSTSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + "/" + DEFAULT_SERVER_TRUSTSTORE);
+        kafkaBrokerConfig.setProperty(SSL_KEYSTORE_PASSWORD_CONFIG, certStoreConfig.getServerKeystorePassword());
+        kafkaBrokerConfig.setProperty(SSL_TRUSTSTORE_PASSWORD_CONFIG, certStoreConfig.getServerTruststorePassword());
+        kafkaBrokerConfig.setProperty(SSL_KEY_PASSWORD_CONFIG, certStoreConfig.getServerKeystorePassword());
         kafkaBrokerConfig.setProperty(SSL_CLIENT_AUTH_CONFIG, "required");
-        kafkaBrokerConfig.setProperty(BROKER_LISTENERS, format("SSL://localhost:%d", brokerPort));
+        kafkaBrokerConfig.setProperty(BROKER_LISTENERS, format("SSL://" + DEFAULT_HOST + ":%d", brokerPort));
         kafkaBrokerConfig.setProperty(BROKER_INTER_BROKER_PROTOCOL, "SSL");
     }
 
@@ -106,7 +120,7 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
 
     private KafkaConsumer getNewConsumer() {
         Properties props = new Properties();
-        props.put(BOOTSTRAP_SERVERS_CONFIG, format("localhost:%d", brokerPort));
+        props.put(BOOTSTRAP_SERVERS_CONFIG, format(DEFAULT_HOST + ":%d", brokerPort));
         props.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
@@ -117,21 +131,36 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
 
     private void getSSLClientConfig(Properties props) {
         props.put(CLIENT_SECURITY_PROTOCOL, "SSL");
-        props.put(SSL_TRUSTSTORE_LOCATION_CONFIG, certStorePath + "/client.truststore.jks");
-        props.put(SSL_KEYSTORE_LOCATION_CONFIG, certStorePath + "/client.keystore.jks");
-        props.put(SSL_TRUSTSTORE_PASSWORD_CONFIG, "test1234");
-        props.put(SSL_KEYSTORE_PASSWORD_CONFIG, "test1234");
+        props.put(SSL_TRUSTSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + "/" + DEFAULT_CLIENT_TRUSTSTORE);
+        props.put(SSL_KEYSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + "/" + DEFAULT_CLIENT_KEYSTORE);
+        props.put(SSL_TRUSTSTORE_PASSWORD_CONFIG, certStoreConfig.getClientTruststorePassword());
+        props.put(SSL_KEYSTORE_PASSWORD_CONFIG, certStoreConfig.getClientKeystorePassword());
+    }
+
+    public String getClientKeystorePath(){
+        return String.format("%s/" + DEFAULT_CLIENT_KEYSTORE, certStoreConfig.getCertStoreDirectory());
+    }
+
+    public String getClientTruststorePath(){
+        return String.format("%s/" + DEFAULT_SERVER_KEYSTORE, certStoreConfig.getCertStoreDirectory());
+    }
+
+    public String getClientKeystorePassword(){
+        return certStoreConfig.getClientKeystorePassword();
+    }
+
+    public String getClientTruststorePassword(){
+        return certStoreConfig.getClientTruststorePassword();
     }
 
     private String getLocalCertStorePath() {
-        final URL resource = this.getClass().getResource("/certStore");
         File certDir;
         try {
             certDir = java.nio.file.Files.createTempDirectory("certDir").toFile();
-            Files.copy(getCertFiles("client.keystore.jks"), Paths.get(certDir+"/client.keystore.jks"));
-            Files.copy(getCertFiles("client.truststore.jks"), Paths.get(certDir+"/client.truststore.jks"));
-            Files.copy(getCertFiles("server.keystore.jks"), Paths.get(certDir+"/server.keystore.jks"));
-            Files.copy(getCertFiles("server.truststore.jks"), Paths.get(certDir+"/server.truststore.jks"));
+            Files.copy(getCertFiles(DEFAULT_CLIENT_KEYSTORE), Paths.get(certDir + "/" + DEFAULT_CLIENT_KEYSTORE));
+            Files.copy(getCertFiles(DEFAULT_CLIENT_TRUSTSTORE), Paths.get(certDir + "/" + DEFAULT_CLIENT_TRUSTSTORE));
+            Files.copy(getCertFiles(DEFAULT_SERVER_KEYSTORE), Paths.get(certDir + "/" + DEFAULT_SERVER_KEYSTORE));
+            Files.copy(getCertFiles(DEFAULT_SERVER_TRUSTSTORE), Paths.get(certDir + "/" + DEFAULT_SERVER_TRUSTSTORE));
             certDir.deleteOnExit();
         } catch (IOException e) {
             throw new RuntimeException("unable to create certificates directory", e);
