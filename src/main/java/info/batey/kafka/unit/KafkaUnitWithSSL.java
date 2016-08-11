@@ -91,8 +91,8 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
         kafkaBrokerConfig.setProperty(BROKER_PORT, Integer.toString(brokerPort));
         kafkaBrokerConfig.setProperty(ZOOKEEPER_LOG_DIRECTORY, logDir.getAbsolutePath());
         kafkaBrokerConfig.setProperty(ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES, valueOf(1));
-        kafkaBrokerConfig.setProperty(SSL_KEYSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + "/" + DEFAULT_SERVER_KEYSTORE);
-        kafkaBrokerConfig.setProperty(SSL_TRUSTSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + "/" + DEFAULT_SERVER_TRUSTSTORE);
+        kafkaBrokerConfig.setProperty(SSL_KEYSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + File.separator + DEFAULT_SERVER_KEYSTORE);
+        kafkaBrokerConfig.setProperty(SSL_TRUSTSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + File.separator + DEFAULT_SERVER_TRUSTSTORE);
         kafkaBrokerConfig.setProperty(SSL_KEYSTORE_PASSWORD_CONFIG, certStoreConfig.getServerKeystorePassword());
         kafkaBrokerConfig.setProperty(SSL_TRUSTSTORE_PASSWORD_CONFIG, certStoreConfig.getServerTruststorePassword());
         kafkaBrokerConfig.setProperty(SSL_KEY_PASSWORD_CONFIG, certStoreConfig.getServerKeystorePassword());
@@ -124,15 +124,15 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
         props.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(GROUP_ID_CONFIG, "10");
+        props.put(GROUP_ID_CONFIG, "kafka-unit-group");
         getSSLClientConfig(props);
         return new KafkaConsumer(props);
     }
 
     private void getSSLClientConfig(Properties props) {
         props.put(CLIENT_SECURITY_PROTOCOL, "SSL");
-        props.put(SSL_TRUSTSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + "/" + DEFAULT_CLIENT_TRUSTSTORE);
-        props.put(SSL_KEYSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + "/" + DEFAULT_CLIENT_KEYSTORE);
+        props.put(SSL_TRUSTSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + File.separator + DEFAULT_CLIENT_TRUSTSTORE);
+        props.put(SSL_KEYSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + File.separator + DEFAULT_CLIENT_KEYSTORE);
         props.put(SSL_TRUSTSTORE_PASSWORD_CONFIG, certStoreConfig.getClientTruststorePassword());
         props.put(SSL_KEYSTORE_PASSWORD_CONFIG, certStoreConfig.getClientKeystorePassword());
     }
@@ -157,10 +157,10 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
         File certDir;
         try {
             certDir = java.nio.file.Files.createTempDirectory("certDir").toFile();
-            Files.copy(getCertFiles(DEFAULT_CLIENT_KEYSTORE), Paths.get(certDir + "/" + DEFAULT_CLIENT_KEYSTORE));
-            Files.copy(getCertFiles(DEFAULT_CLIENT_TRUSTSTORE), Paths.get(certDir + "/" + DEFAULT_CLIENT_TRUSTSTORE));
-            Files.copy(getCertFiles(DEFAULT_SERVER_KEYSTORE), Paths.get(certDir + "/" + DEFAULT_SERVER_KEYSTORE));
-            Files.copy(getCertFiles(DEFAULT_SERVER_TRUSTSTORE), Paths.get(certDir + "/" + DEFAULT_SERVER_TRUSTSTORE));
+            Files.copy(getCertFiles(DEFAULT_CLIENT_KEYSTORE), Paths.get(certDir + File.separator + DEFAULT_CLIENT_KEYSTORE));
+            Files.copy(getCertFiles(DEFAULT_CLIENT_TRUSTSTORE), Paths.get(certDir + File.separator + DEFAULT_CLIENT_TRUSTSTORE));
+            Files.copy(getCertFiles(DEFAULT_SERVER_KEYSTORE), Paths.get(certDir + File.separator + DEFAULT_SERVER_KEYSTORE));
+            Files.copy(getCertFiles(DEFAULT_SERVER_TRUSTSTORE), Paths.get(certDir + File.separator + DEFAULT_SERVER_TRUSTSTORE));
             certDir.deleteOnExit();
         } catch (IOException e) {
             throw new RuntimeException("unable to create certificates directory", e);
