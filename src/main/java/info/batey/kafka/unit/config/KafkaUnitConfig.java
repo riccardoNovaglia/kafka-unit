@@ -1,4 +1,4 @@
-package info.batey.kafka.unit;
+package info.batey.kafka.unit.config;
 
 public class KafkaUnitConfig {
     public static final String BROKER_ID = "broker.id";

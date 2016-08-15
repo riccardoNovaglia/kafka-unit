@@ -1,6 +1,6 @@
 package info.batey.kafka.unit.ssl;
 
-import info.batey.kafka.unit.CertStoreConfig;
+import info.batey.kafka.unit.config.CertStoreConfig;
 import info.batey.kafka.unit.KafkaUnitWithSSL;
 import kafka.server.KafkaServerStartable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

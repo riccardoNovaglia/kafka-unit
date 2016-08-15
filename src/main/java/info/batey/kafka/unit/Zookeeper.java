@@ -15,6 +15,7 @@
  */
 package info.batey.kafka.unit;
 
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
@@ -23,19 +24,22 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import static info.batey.kafka.unit.utils.FileUtils.registerDirectoriesToDelete;
+
 public class Zookeeper {
+    private static final Logger LOGGER = Logger.getLogger(Zookeeper.class);
     private int port;
 
     private ServerCnxnFactory factory;
+
 
     public Zookeeper(int port) {
         this.port = port;
     }
 
     public void startup() {
-
-        File snapshotDir;
         File logDir;
+        File snapshotDir;
         try {
             snapshotDir = java.nio.file.Files.createTempDirectory("zookeeper-snapshot").toFile();
             logDir = java.nio.file.Files.createTempDirectory("zookeeper-logs").toFile();
@@ -43,8 +47,7 @@ public class Zookeeper {
             throw new RuntimeException("Unable to start Kafka", e);
         }
 
-        snapshotDir.deleteOnExit();
-        logDir.deleteOnExit();
+        registerDirectoriesToDelete(snapshotDir, logDir);
 
         try {
             int tickTime = 500;

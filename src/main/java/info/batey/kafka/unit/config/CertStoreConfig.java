@@ -1,4 +1,4 @@
-package info.batey.kafka.unit;
+package info.batey.kafka.unit.config;
 
 public class CertStoreConfig {
     private final String certStoreDirectory;

@@ -4,7 +4,6 @@ import kafka.admin.TopicCommand;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import kafka.utils.ZkUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -18,6 +17,8 @@ import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Properties;
+
+import static info.batey.kafka.unit.utils.FileUtils.registerDirectoriesToDelete;
 
 
 public abstract class AbstractKafkaUnit {
@@ -154,17 +155,8 @@ public abstract class AbstractKafkaUnit {
         } catch (IOException e) {
             throw new RuntimeException("Unable to start Kafka", e);
         }
-        logDir.deleteOnExit();
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    FileUtils.deleteDirectory(logDir);
-                } catch (IOException e) {
-                    LOGGER.warn("Problems deleting temporary directory " + logDir.getAbsolutePath(), e);
-                }
-            }
-        }));
+
+        registerDirectoriesToDelete(logDir);
         return logDir;
     }
 }

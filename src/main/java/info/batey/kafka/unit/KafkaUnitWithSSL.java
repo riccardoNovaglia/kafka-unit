@@ -1,6 +1,7 @@
 package info.batey.kafka.unit;
 
 
+import info.batey.kafka.unit.config.CertStoreConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -15,15 +16,16 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
 
-import static info.batey.kafka.unit.KafkaUnitConfig.BROKER_HOST_NAME;
-import static info.batey.kafka.unit.KafkaUnitConfig.BROKER_ID;
-import static info.batey.kafka.unit.KafkaUnitConfig.BROKER_INTER_BROKER_PROTOCOL;
-import static info.batey.kafka.unit.KafkaUnitConfig.BROKER_LISTENERS;
-import static info.batey.kafka.unit.KafkaUnitConfig.BROKER_PORT;
-import static info.batey.kafka.unit.KafkaUnitConfig.CLIENT_SECURITY_PROTOCOL;
-import static info.batey.kafka.unit.KafkaUnitConfig.ZOOKEEPER_CONNECT;
-import static info.batey.kafka.unit.KafkaUnitConfig.ZOOKEEPER_LOG_DIRECTORY;
-import static info.batey.kafka.unit.KafkaUnitConfig.ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_HOST_NAME;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_ID;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_INTER_BROKER_PROTOCOL;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_LISTENERS;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_PORT;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.CLIENT_SECURITY_PROTOCOL;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_CONNECT;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_LOG_DIRECTORY;
+import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES;
+import static info.batey.kafka.unit.utils.FileUtils.registerDirectoriesToDelete;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG;
@@ -154,14 +156,15 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
     }
 
     private String getLocalCertStorePath() {
-        File certDir;
+        final File certDir;
         try {
             certDir = java.nio.file.Files.createTempDirectory("certDir").toFile();
             Files.copy(getCertFiles(DEFAULT_CLIENT_KEYSTORE), Paths.get(certDir + File.separator + DEFAULT_CLIENT_KEYSTORE));
             Files.copy(getCertFiles(DEFAULT_CLIENT_TRUSTSTORE), Paths.get(certDir + File.separator + DEFAULT_CLIENT_TRUSTSTORE));
             Files.copy(getCertFiles(DEFAULT_SERVER_KEYSTORE), Paths.get(certDir + File.separator + DEFAULT_SERVER_KEYSTORE));
             Files.copy(getCertFiles(DEFAULT_SERVER_TRUSTSTORE), Paths.get(certDir + File.separator + DEFAULT_SERVER_TRUSTSTORE));
-            certDir.deleteOnExit();
+
+            registerDirectoriesToDelete(certDir);
         } catch (IOException e) {
             throw new RuntimeException("unable to create certificates directory", e);
         }

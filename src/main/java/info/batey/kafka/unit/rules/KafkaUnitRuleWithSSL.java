@@ -1,6 +1,6 @@
 package info.batey.kafka.unit.rules;
 
-import info.batey.kafka.unit.CertStoreConfig;
+import info.batey.kafka.unit.config.CertStoreConfig;
 import info.batey.kafka.unit.KafkaUnitWithSSL;
 import org.junit.rules.ExternalResource;
 
