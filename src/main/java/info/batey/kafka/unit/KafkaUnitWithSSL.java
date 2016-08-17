@@ -103,10 +103,10 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
         kafkaBrokerConfig.setProperty(BROKER_INTER_BROKER_PROTOCOL, "SSL");
     }
 
-    public ConsumerRecords<String, String> readMessages(String topicName, final int expectedMessages) {
+    public ConsumerRecords<String, String> readMessages(String topicName, final int expectedMessages, long pollTimeoutInMs) {
         try (KafkaConsumer consumer = getNewConsumer();) {
             consumer.subscribe(Arrays.asList(topicName));
-            final ConsumerRecords<String, String> records = consumer.poll(timeout_3_Seconds);
+            final ConsumerRecords<String, String> records = consumer.poll(pollTimeoutInMs);
             if (records.count() != expectedMessages) {
                 throw new ComparisonFailure("Incorrect number of messages returned",
                     Integer.toString(expectedMessages),
@@ -118,6 +118,10 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
             }
             return records;
         }
+    }
+
+    public ConsumerRecords<String, String> readMessages(String topicName, final int expectedMessages) {
+        return readMessages(topicName, expectedMessages, timeout_3_Seconds);
     }
 
     private KafkaConsumer getNewConsumer() {
