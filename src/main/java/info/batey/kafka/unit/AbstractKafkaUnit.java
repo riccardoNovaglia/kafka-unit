@@ -2,7 +2,8 @@ package info.batey.kafka.unit;
 
 import kafka.admin.TopicCommand;
 import kafka.server.KafkaConfig;
-import kafka.server.KafkaServerStartable;
+import kafka.server.KafkaServer;
+import kafka.utils.Time;
 import kafka.utils.ZkUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -10,6 +11,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.security.JaasUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Option;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +26,7 @@ import static info.batey.kafka.unit.utils.FileUtils.registerDirectoriesToDelete;
 public abstract class AbstractKafkaUnit {
 
     protected static final Logger LOGGER = LoggerFactory.getLogger(KafkaUnit.class);
-    protected KafkaServerStartable broker;
+    protected KafkaServer broker;
     protected Zookeeper zookeeper;
     protected String zookeeperUri;
     protected String brokerString;
@@ -42,7 +44,7 @@ public abstract class AbstractKafkaUnit {
         zookeeper = new Zookeeper(zkPort);
         zookeeper.startup();
         final KafkaConfig serverConfig = new KafkaConfig(kafkaBrokerConfig);
-        broker = new KafkaServerStartable(serverConfig);
+        broker = new KafkaServer(serverConfig, now(), Option.<String>empty());
         broker.startup();
     }
 
@@ -158,5 +160,28 @@ public abstract class AbstractKafkaUnit {
 
         registerDirectoriesToDelete(logDir);
         return logDir;
+    }
+
+    private Time now() {
+        return new Time() {
+            @Override
+            public long milliseconds() {
+                return System.currentTimeMillis();
+            }
+
+            @Override
+            public long nanoseconds() {
+                return System.nanoTime();
+            }
+
+            @Override
+            public void sleep(long ms) {
+                try {
+                    Thread.sleep(ms);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
     }
 }

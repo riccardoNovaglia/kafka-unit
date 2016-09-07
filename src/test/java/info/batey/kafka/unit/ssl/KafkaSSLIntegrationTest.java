@@ -2,6 +2,7 @@ package info.batey.kafka.unit.ssl;
 
 import info.batey.kafka.unit.config.CertStoreConfig;
 import info.batey.kafka.unit.KafkaUnitWithSSL;
+import kafka.server.KafkaServer;
 import kafka.server.KafkaServerStartable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -54,8 +55,8 @@ public class KafkaSSLIntegrationTest  {
     public void shutdown() throws Exception {
         Field f = kafkaUnitServer.getClass().getSuperclass().getDeclaredField("broker");
         f.setAccessible(true);
-        KafkaServerStartable broker = (KafkaServerStartable) f.get(kafkaUnitServer);
-        assertEquals(1024, (int)broker.serverConfig().logSegmentBytes());
+        KafkaServer broker = (KafkaServer) f.get(kafkaUnitServer);
+        assertEquals(1024, (int)broker.config().logSegmentBytes());
         kafkaUnitServer.shutdown();
     }
 

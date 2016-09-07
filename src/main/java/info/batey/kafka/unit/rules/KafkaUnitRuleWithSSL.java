@@ -18,7 +18,12 @@ public class KafkaUnitRuleWithSSL extends ExternalResource {
 
     @Override
     protected void before() throws Throwable {
-        kafkaUnit.startup();
+        try{
+            kafkaUnit.startup();
+        } catch (Throwable t){
+            after();
+            throw t;
+        }
     }
 
     @Override
