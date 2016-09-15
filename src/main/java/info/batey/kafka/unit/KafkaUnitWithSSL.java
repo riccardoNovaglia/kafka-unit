@@ -13,25 +13,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Properties;
 
-import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_HOST_NAME;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_ID;
 import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_INTER_BROKER_PROTOCOL;
 import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_LISTENERS;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_PORT;
 import static info.batey.kafka.unit.config.KafkaUnitConfig.CLIENT_SECURITY_PROTOCOL;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_CONNECT;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_LOG_DIRECTORY;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES;
 import static info.batey.kafka.unit.utils.FileUtils.registerDirectoriesToDelete;
 import static java.lang.String.format;
-import static java.lang.String.valueOf;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG;
+import static java.util.Collections.singletonList;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
@@ -45,7 +34,6 @@ import static org.apache.kafka.common.config.SslConfigs.SSL_TRUSTSTORE_PASSWORD_
 public class KafkaUnitWithSSL extends AbstractKafkaUnit {
 
     private final CertStoreConfig certStoreConfig;
-    private final String DEFAULT_HOST = "localhost";
     private final String DEFAULT_SERVER_KEYSTORE = "server.keystore.jks";
     private final String DEFAULT_SERVER_TRUSTSTORE = "server.truststore.jks";
     private final String DEFAULT_CLIENT_TRUSTSTORE = "client.truststore.jks";
@@ -81,18 +69,12 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
         props.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
         props.put(VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
         props.put(BOOTSTRAP_SERVERS_CONFIG, brokerString);
-        getSSLClientConfig(props);
+        addSSLConfig(props);
         return props;
     }
 
-    @Override void setBrokerConfig() {
-        final File logDir = getLogDirectory();
-        kafkaBrokerConfig.setProperty(ZOOKEEPER_CONNECT, zookeeperUri);
-        kafkaBrokerConfig.setProperty(BROKER_ID, "1");
-        kafkaBrokerConfig.setProperty(BROKER_HOST_NAME, DEFAULT_HOST);
-        kafkaBrokerConfig.setProperty(BROKER_PORT, Integer.toString(brokerPort));
-        kafkaBrokerConfig.setProperty(ZOOKEEPER_LOG_DIRECTORY, logDir.getAbsolutePath());
-        kafkaBrokerConfig.setProperty(ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES, valueOf(1));
+    @Override protected void setBrokerConfig() {
+        super.setBrokerConfig();
         kafkaBrokerConfig.setProperty(SSL_KEYSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + File.separator + DEFAULT_SERVER_KEYSTORE);
         kafkaBrokerConfig.setProperty(SSL_TRUSTSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + File.separator + DEFAULT_SERVER_TRUSTSTORE);
         kafkaBrokerConfig.setProperty(SSL_KEYSTORE_PASSWORD_CONFIG, certStoreConfig.getServerKeystorePassword());
@@ -104,8 +86,8 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
     }
 
     public ConsumerRecords<String, String> readMessages(String topicName, final int expectedMessages, long pollTimeoutInMs) {
-        try (KafkaConsumer consumer = getNewConsumer();) {
-            consumer.subscribe(Arrays.asList(topicName));
+        try (KafkaConsumer<String, String> consumer = getNewConsumer();) {
+            consumer.subscribe(singletonList(topicName));
             final ConsumerRecords<String, String> records = consumer.poll(pollTimeoutInMs);
             if (records.count() != expectedMessages) {
                 throw new ComparisonFailure("Incorrect number of messages returned",
@@ -124,18 +106,13 @@ public class KafkaUnitWithSSL extends AbstractKafkaUnit {
         return readMessages(topicName, expectedMessages, timeout_3_Seconds);
     }
 
-    private KafkaConsumer getNewConsumer() {
-        Properties props = new Properties();
-        props.put(BOOTSTRAP_SERVERS_CONFIG, format(DEFAULT_HOST + ":%d", brokerPort));
-        props.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(GROUP_ID_CONFIG, "kafka-unit-group");
-        getSSLClientConfig(props);
-        return new KafkaConsumer(props);
+    @Override protected Properties getConsumerProperties() {
+        final Properties properties = super.getConsumerProperties();
+        addSSLConfig(properties);
+        return properties;
     }
 
-    private void getSSLClientConfig(Properties props) {
+    private void addSSLConfig(Properties props) {
         props.put(CLIENT_SECURITY_PROTOCOL, "SSL");
         props.put(SSL_TRUSTSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + File.separator + DEFAULT_CLIENT_TRUSTSTORE);
         props.put(SSL_KEYSTORE_LOCATION_CONFIG, certStoreConfig.getCertStoreDirectory() + File.separator + DEFAULT_CLIENT_KEYSTORE);

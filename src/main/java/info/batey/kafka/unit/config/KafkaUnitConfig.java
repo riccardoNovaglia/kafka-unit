@@ -13,4 +13,6 @@ public class KafkaUnitConfig {
     public static final String ZOOKEEPER_CONNECT = "zookeeper.connect";
     public static final String ZOOKEEPER_LOG_DIRECTORY = "log.dir";
     public static final String ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES = "log.flush.interval.messages";
+    public static final String LOG_CLEANER_ENABLE = "log.cleaner.enable";
+    public static final String OFFSETS_TOPIC_NUM_PARTITIONS = "offsets.topic.num.partitions";
 }

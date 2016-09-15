@@ -27,7 +27,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.ComparisonFailure;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,16 +40,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_HOST_NAME;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_ID;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.BROKER_PORT;
 import static info.batey.kafka.unit.config.KafkaUnitConfig.CONSUMER_ID;
 import static info.batey.kafka.unit.config.KafkaUnitConfig.CONSUMER_SOCKET_TIMEOUT_MS;
 import static info.batey.kafka.unit.config.KafkaUnitConfig.CONSUMER_TIMEOUT_MS;
 import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_CONNECT;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_LOG_DIRECTORY;
-import static info.batey.kafka.unit.config.KafkaUnitConfig.ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES;
-import static java.lang.String.valueOf;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
@@ -68,16 +61,6 @@ public class KafkaUnit extends AbstractKafkaUnit {
 
     public KafkaUnit(String zkConnectionString, String kafkaConnectionString) {
         this(parseConnectionString(zkConnectionString), parseConnectionString(kafkaConnectionString));
-    }
-
-    @Override void setBrokerConfig() {
-        final File logDir = getLogDirectory();
-        kafkaBrokerConfig.setProperty(ZOOKEEPER_CONNECT, zookeeperUri);
-        kafkaBrokerConfig.setProperty(BROKER_ID, "1");
-        kafkaBrokerConfig.setProperty(BROKER_HOST_NAME, "localhost");
-        kafkaBrokerConfig.setProperty(BROKER_PORT, Integer.toString(brokerPort));
-        kafkaBrokerConfig.setProperty(ZOOKEEPER_LOG_DIRECTORY, logDir.getAbsolutePath());
-        kafkaBrokerConfig.setProperty(ZOOKEEPER_LOG_FLUSH_INTERVAL_MESSAGES, valueOf(1));
     }
 
     @Override Properties getProducerConfig() {
