@@ -15,6 +15,7 @@
  */
 package info.batey.kafka.unit.ssl;
 
+import info.batey.kafka.unit.KafkaUnitWithSSL;
 import info.batey.kafka.unit.rules.KafkaUnitRuleWithSSL;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -75,6 +76,35 @@ public class KafkaUnitSslIntegrationTest {
         try (final KafkaConsumer<String, String> consumer = new KafkaConsumer<>(getConsumerProperties())) {
             final Map<String, List<PartitionInfo>> topics = consumer.listTopics();
             assertTrue(topics.containsKey("test-topic"));
+        }
+    }
+
+    @Test
+    public void createTopicShouldBeIdempotent() throws Exception {
+        // given
+        String topic = "test-topic";
+        kafkaUnitSslRule.getKafkaUnit().createTopic(topic);
+
+        // when
+        kafkaUnitSslRule.getKafkaUnit().createTopic(topic);
+
+        // then no exception should have been thrown
+    }
+
+    @Test
+    public void topicsShouldNotBePersistedBetweenRestarts() throws Exception {
+        // given
+        final KafkaUnitWithSSL kafkaUnit = kafkaUnitSslRule.getKafkaUnit();
+        kafkaUnit.createTopic("test-topic");
+
+        // when
+        kafkaUnit.shutdown();
+        kafkaUnit.startup();
+
+        // then
+        try (final KafkaConsumer<String, String> consumer = new KafkaConsumer<>(getConsumerProperties())) {
+            final Map<String, List<PartitionInfo>> topics = consumer.listTopics();
+            assertTrue(topics.isEmpty());
         }
     }
 

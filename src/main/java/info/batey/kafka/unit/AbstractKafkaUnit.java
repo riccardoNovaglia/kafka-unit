@@ -2,6 +2,7 @@ package info.batey.kafka.unit;
 
 import com.jayway.awaitility.Duration;
 import kafka.admin.TopicCommand;
+import kafka.common.TopicExistsException;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.utils.Time;
@@ -83,7 +84,7 @@ public abstract class AbstractKafkaUnit {
     @SafeVarargs
     public final void sendMessages(ProducerRecord<String, String> message, ProducerRecord<String, String>... messages) {
 
-        try (Producer<String, String> producer = createProducer();) {
+        try (Producer<String, String> producer = createProducer()) {
             producer.send(message);
             for (ProducerRecord<String, String> msg : messages) {
                 producer.send(msg);
@@ -121,6 +122,9 @@ public abstract class AbstractKafkaUnit {
         try {
             LOGGER.info("Executing: CreateTopic " + Arrays.toString(arguments));
             TopicCommand.createTopic(zkUtils, opts);
+        } catch (TopicExistsException e) {
+            LOGGER.warn(String.format("Topic '%s' already exists, not attempting to create it again. " +
+                "This should not happen if KafkaUnit is successfully restarted between tests.", topicName));
         } finally {
             zkUtils.close();
         }

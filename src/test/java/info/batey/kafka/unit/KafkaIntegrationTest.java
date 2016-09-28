@@ -81,17 +81,19 @@ public class KafkaIntegrationTest {
         }
     }
 
-     @Test
+    @Test
     public void canUseKafkaConnectToProduce() throws Exception {
         final String topic = "KafkakConnectTestTopic";
         Properties props = new Properties();
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getCanonicalName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUnitServer.getKafkaConnect());
-        Producer<Long, String> producer = new KafkaProducer<>(props);
-        ProducerRecord<Long, String> record = new ProducerRecord<>(topic, 1L, "test");
-        producer.send(record);      // would be good to have KafkaUnit.sendMessages() support the new producer
-        assertEquals("test", kafkaUnitServer.readMessages(topic, 1).get(0));
+
+        try (final Producer<Long, String> producer = new KafkaProducer<>(props)) {
+            ProducerRecord<Long, String> record = new ProducerRecord<>(topic, 1L, "test");
+            producer.send(record);      // would be good to have KafkaUnit.sendMessages() support the new producer
+            assertEquals("test", kafkaUnitServer.readMessages(topic, 1).get(0));
+        }
     }
 
     @Test

@@ -1,9 +1,8 @@
 package info.batey.kafka.unit.ssl;
 
-import info.batey.kafka.unit.config.CertStoreConfig;
 import info.batey.kafka.unit.KafkaUnitWithSSL;
+import info.batey.kafka.unit.config.CertStoreConfig;
 import kafka.server.KafkaServer;
-import kafka.server.KafkaServerStartable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -73,11 +72,13 @@ public class KafkaSSLIntegrationTest  {
 
         final String topic = "KafkakConnectTestTopic";
         Properties props = getKafkaSSLConfigProperties();
-        Producer<Long, String> producer = new KafkaProducer<>(props);
-        ProducerRecord<Long, String> record = new ProducerRecord<>(topic, 1L, "test");
-        producer.send(record);
-        final ConsumerRecords<String, String> expectedRecords = kafkaUnitServer.readMessages(topic, 1);
-        assertEquals("test", getConsumerRecordsToList(expectedRecords).get(0));
+
+        try (final Producer<Long, String> producer = new KafkaProducer<>(props)) {
+            ProducerRecord<Long, String> record = new ProducerRecord<>(topic, 1L, "test");
+            producer.send(record);
+            final ConsumerRecords<String, String> expectedRecords = kafkaUnitServer.readMessages(topic, 1);
+            assertEquals("test", getConsumerRecordsToList(expectedRecords).get(0));
+        }
     }
 
     @Test
